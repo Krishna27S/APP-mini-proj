@@ -20,13 +20,13 @@ public class MainFrame extends JFrame {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         
         /* LEFT SIDE - EXISTING FORM PANEL */
-        JPanel leftPanel = createLeftPanel();
+        // JPanel leftPanel = createLeftPanel();
         
         /* RIGHT SIDE - TEMPLATE MANAGEMENT */
         JPanel rightPanel = createTemplatePanel();
         
         // Add panels to split pane
-        splitPane.setLeftComponent(leftPanel);
+        // splitPane.setLeftComponent(leftPanel);
         splitPane.setRightComponent(rightPanel);
         splitPane.setDividerLocation(250);
         
