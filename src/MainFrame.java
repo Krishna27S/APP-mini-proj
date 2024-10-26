@@ -95,13 +95,25 @@ public class MainFrame extends JFrame {
         ));
 
         // Load and resize icon
-        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/icon1.gif"));
-        Image image = originalIcon.getImage();
-        Image resizedImage = image.getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-        ImageIcon icon = new ImageIcon(resizedImage);
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        iconPanel.add(iconLabel, BorderLayout.CENTER);
+        try {
+            ImageIcon gifIcon = new ImageIcon(getClass().getResource("/icon1.gif"));
+            // Increased size to be more visible - adjust these numbers as needed
+            Image scaledImage = gifIcon.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+            ImageIcon scaledGifIcon = new ImageIcon(scaledImage);
+            
+            JLabel iconLabel = new JLabel(scaledGifIcon);
+            iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            // Add padding around the icon
+            iconLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            iconPanel.add(iconLabel, BorderLayout.CENTER);
+        } catch (Exception e) {
+            System.out.println("Error loading GIF: " + e.getMessage());
+            JLabel fallbackLabel = new JLabel("👥");
+            fallbackLabel.setFont(new Font("Segoe UI", Font.PLAIN, 48));
+            fallbackLabel.setForeground(Color.WHITE);
+            fallbackLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            iconPanel.add(fallbackLabel, BorderLayout.CENTER);
+        }
         
         // Title and Subtitle with shadow effect
         JLabel titleLabel = new JLabel("internXconnect");
@@ -293,7 +305,13 @@ public class MainFrame extends JFrame {
         String description = tfTemplateDescription.getText();
         
         if (!name.isEmpty() && !description.isEmpty()) {
-            tableModel.addRow(new Object[]{name, description});
+            // Add new row with status and date
+            tableModel.addRow(new Object[]{
+                name,
+                description,
+                "Active",
+                java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+            });
             
             // Clear form
             tfTemplateName.setText("");
@@ -309,6 +327,22 @@ public class MainFrame extends JFrame {
                 "Please fill in both job title and description",
                 "Input Error",
                 JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private void addCountLabel(JPanel panel, String text, int count) {
+        JLabel label = new JLabel(text + count);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        label.setForeground(TEXT_COLOR);
+        panel.add(label);
+    }
+    
+    private Color getStatusColor(String status) {
+        if (status == null) return TEXT_COLOR;
+        switch (status.toLowerCase()) {
+            case "active": return new Color(46, 125, 50);  // Green
+            case "pending": return new Color(245, 124, 0);  // Orange
+            case "closed": return new Color(211, 47, 47);  // Red
+            default: return TEXT_COLOR;
         }
     }
     
