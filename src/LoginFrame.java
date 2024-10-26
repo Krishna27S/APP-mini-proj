@@ -1,13 +1,11 @@
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.*;
 
 public class LoginFrame extends JFrame {
     private final Color PRIMARY_COLOR = new Color(123, 31, 162);
     private final Color BUTTON_COLOR = new Color(255, 87, 34);
-    private final Color BACKGROUND_COLOR = new Color(248, 245, 250);
     
-    private JTextField tfEmail;
+    private JTextField tfUsername;
     private JPasswordField pfPassword;
     
     public LoginFrame() {
@@ -21,188 +19,158 @@ public class LoginFrame extends JFrame {
     
     private void initialize() {
         setTitle("internXconnect - Login");
-        setSize(400, 600);
-        setMinimumSize(new Dimension(350, 550));
+        setSize(450, 550);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
         
-        // Main Panel with gradient background
-        JPanel mainPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, PRIMARY_COLOR,
-                    0, getHeight(), PRIMARY_COLOR.darker()
-                );
-                g2d.setPaint(gradient);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        mainPanel.setLayout(new BorderLayout());
+        // Main Panel
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
         
-        // Login Card
-        JPanel loginCard = createLoginCard();
-        mainPanel.add(loginCard, BorderLayout.CENTER);
+        // Logo and Title
+        // Logo and Title
+        try {
+            ImageIcon gifIcon = new ImageIcon(getClass().getResource("/icon1.gif"));
+            // Reduced size to 60x60 pixels (you can adjust these numbers)
+            Image scaledImage = gifIcon.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT);
+            ImageIcon scaledGifIcon = new ImageIcon(scaledImage);
+            
+            // Use the scaled version instead of original
+            JLabel logoLabel = new JLabel(scaledGifIcon);  // Using scaled version here
+            
+            logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            mainPanel.add(logoLabel);
+        } catch (Exception e) {
+            System.out.println("GIF not found");
+            // Fallback to text or emoji if GIF is not found
+            JLabel fallbackLabel = new JLabel("👥");
+            fallbackLabel.setFont(new Font("Segoe UI", Font.PLAIN, 48));
+            fallbackLabel.setForeground(PRIMARY_COLOR);
+            fallbackLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            mainPanel.add(fallbackLabel);
+        }
+        JLabel titleLabel = new JLabel("internXconnect");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(PRIMARY_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel subtitleLabel = new JLabel("Welcome back!");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        subtitleLabel.setForeground(Color.GRAY);
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        mainPanel.add(Box.createVerticalStrut(20));
+        mainPanel.add(titleLabel);
+        mainPanel.add(Box.createVerticalStrut(5));
+        mainPanel.add(subtitleLabel);
+        mainPanel.add(Box.createVerticalStrut(30));
+        
+        // Login Form
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        
+        // Username field
+        JLabel userLabel = new JLabel("Username");
+        userLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        gbc.gridx = 0; gbc.gridy = 0;
+        formPanel.add(userLabel, gbc);
+        
+        tfUsername = createTextField();
+        gbc.gridy = 1;
+        formPanel.add(tfUsername, gbc);
+        
+        // Password field
+        JLabel passLabel = new JLabel("Password");
+        passLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        gbc.gridy = 2;
+        gbc.insets = new Insets(15, 0, 5, 0);
+        formPanel.add(passLabel, gbc);
+        
+        pfPassword = createPasswordField();
+        gbc.gridy = 3;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        formPanel.add(pfPassword, gbc);
+        
+        formPanel.setMaximumSize(new Dimension(300, 200));
+        mainPanel.add(formPanel);
+        mainPanel.add(Box.createVerticalStrut(20));
+        
+        // Login button
+        JButton loginButton = createLoginButton("Login");
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginButton.addActionListener(e -> handleLogin());
+        mainPanel.add(loginButton);
+        
+        mainPanel.add(Box.createVerticalStrut(20));
+        
+        // Register link
+        JLabel registerLabel = new JLabel("Don't have an account? Sign up");
+        registerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        registerLabel.setForeground(BUTTON_COLOR);
+        registerLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        registerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(registerLabel);
         
         add(mainPanel);
         setVisible(true);
     }
     
-    private JPanel createLoginCard() {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(50, 40, 50, 40));
-        
-        // Logo and Title
-        try {
-            ImageIcon originalIcon = new ImageIcon(getClass().getResource("/icon.png"));
-            Image image = originalIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-            JLabel logoLabel = new JLabel(new ImageIcon(image));
-            logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            card.add(logoLabel);
-        } catch (Exception e) {
-            // If icon not found, use text
-            JLabel logoText = new JLabel("👤");
-            logoText.setFont(new Font("Segoe UI", Font.PLAIN, 48));
-            logoText.setForeground(Color.WHITE);
-            logoText.setAlignmentX(Component.CENTER_ALIGNMENT);
-            card.add(logoText);
-        }
-        
-        card.add(Box.createVerticalStrut(20));
-        
-        JLabel titleLabel = new JLabel("internXconnect");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        card.add(titleLabel);
-        
-        JLabel subtitleLabel = new JLabel("Login to continue");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitleLabel.setForeground(new Color(255, 255, 255, 200));
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        card.add(subtitleLabel);
-        
-        card.add(Box.createVerticalStrut(40));
-        
-        // Login Form
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setOpaque(false);
-        formPanel.setMaximumSize(new Dimension(300, 400));
-        
-        // Email field
-        JLabel emailLabel = new JLabel("Username");
-        emailLabel.setForeground(Color.WHITE);
-        formPanel.add(emailLabel);
-        
-        tfEmail = new JTextField();
-        tfEmail.setMaximumSize(new Dimension(300, 35));
-        tfEmail.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tfEmail.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10),
+    private JTextField createTextField() {
+        JTextField field = new JTextField(20);
+        field.setPreferredSize(new Dimension(300, 35));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
-        formPanel.add(tfEmail);
-        formPanel.add(Box.createVerticalStrut(20));
-        
-        // Password field
-        JLabel passwordLabel = new JLabel("Password");
-        passwordLabel.setForeground(Color.WHITE);
-        formPanel.add(passwordLabel);
-        
-        pfPassword = new JPasswordField();
-        pfPassword.setMaximumSize(new Dimension(300, 35));
-        pfPassword.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        pfPassword.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10),
+        return field;
+    }
+    
+    private JPasswordField createPasswordField() {
+        JPasswordField field = new JPasswordField(20);
+        field.setPreferredSize(new Dimension(300, 35));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
-        formPanel.add(pfPassword);
-        formPanel.add(Box.createVerticalStrut(30));
-        
-        // Login button
-        JButton loginButton = new JButton("Login") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(getModel().isPressed() ? BUTTON_COLOR.darker() : BUTTON_COLOR);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                super.paintComponent(g);
-            }
-        };
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        loginButton.setMaximumSize(new Dimension(300, 40));
-        loginButton.setBorderPainted(false);
-        loginButton.setContentAreaFilled(false);
-        loginButton.setFocusPainted(false);
-        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        loginButton.addActionListener(e -> handleLogin());
-        
-        formPanel.add(loginButton);
-
-        // Register link
-        JButton registerLink = new JButton("Don't have an account? Register here");
-        registerLink.setForeground(new Color(255, 255, 255, 200));
-        registerLink.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        registerLink.setBorderPainted(false);
-        registerLink.setContentAreaFilled(false);
-        registerLink.setFocusPainted(false);
-        registerLink.setAlignmentX(Component.CENTER_ALIGNMENT);
-        registerLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        formPanel.add(Box.createVerticalStrut(20));
-        formPanel.add(registerLink);
-        
-        card.add(formPanel);
-        
-        return card;
+        return field;
+    }
+    
+    private JButton createLoginButton(String text) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(300, 40));
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(BUTTON_COLOR);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
     
     private void handleLogin() {
-        String username = tfEmail.getText();
+        String username = tfUsername.getText();
         String password = new String(pfPassword.getPassword());
         
-        // Simple validation (you should implement proper authentication)
         if (username.equals("admin") && password.equals("admin")) {
-            dispose(); // Close login window
+            dispose();
             SwingUtilities.invokeLater(() -> {
                 MainFrame mainFrame = new MainFrame();
                 mainFrame.initialize();
             });
         } else {
             JOptionPane.showMessageDialog(this,
-                "Invalid credentials. Please try again.\nHint: use 'admin' for both username and password",
-                "Login Error",
+                "Invalid credentials.\nUse: username = admin, password = admin",
+                "Login Failed",
                 JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    // Custom rounded border for text fields
-    private class RoundedBorder extends AbstractBorder {
-        private final int radius;
-        
-        RoundedBorder(int radius) {
-            this.radius = radius;
-        }
-        
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(Color.WHITE);
-            g2d.drawRoundRect(x, y, width-1, height-1, radius, radius);
-            g2d.dispose();
-        }
-        
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(radius/2, radius/2, radius/2, radius/2);
         }
     }
 }

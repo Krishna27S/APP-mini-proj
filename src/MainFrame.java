@@ -95,7 +95,7 @@ public class MainFrame extends JFrame {
         ));
 
         // Load and resize icon
-        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/icon.png"));
+        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/icon1.gif"));
         Image image = originalIcon.getImage();
         Image resizedImage = image.getScaledInstance(80, 80, Image.SCALE_SMOOTH);
         ImageIcon icon = new ImageIcon(resizedImage);
