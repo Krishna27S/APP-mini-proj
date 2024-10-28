@@ -1,23 +1,21 @@
 import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.table.*;
 import java.text.SimpleDateFormat;
-import javax.swing.border.*;
 import java.util.List;
 
 public class UserDashboard extends JFrame {
     private final Font mainFont = new Font("Segoe UI", Font.PLAIN, 14);
-    private final Font titleFont = new Font("Segoe UI", Font.BOLD, 24);
     private final Color PRIMARY_COLOR = new Color(123, 31, 162);
     private final Color BACKGROUND_COLOR = new Color(248, 245, 250);
-    private final Color ACCENT_COLOR = new Color(171, 71, 188);
+    private final Color APPLY_BUTTON_COLOR = new Color(46, 125, 50);  // Green color for apply button
 
     private JTable jobTable;
     private DefaultTableModel tableModel;
     private JobDAO jobDAO;
     private String loggedInUsername;
-    private JTextField searchField;
     private List<Job> currentJobs;
 
     public UserDashboard(String username) {
@@ -31,119 +29,70 @@ public class UserDashboard extends JFrame {
         setTitle("User Dashboard - " + loggedInUsername);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1000, 600));
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10));
         getContentPane().setBackground(BACKGROUND_COLOR);
 
         // Add components
         add(createHeaderPanel(), BorderLayout.NORTH);
         add(createMainPanel(), BorderLayout.CENTER);
 
-        // Center the window
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
     private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(PRIMARY_COLOR);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JPanel header = new JPanel(new BorderLayout(15, 0));
+        header.setOpaque(false);
+        header.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         // Welcome message
         JLabel welcomeLabel = new JLabel("Welcome, " + loggedInUsername);
-        welcomeLabel.setFont(titleFont);
-        welcomeLabel.setForeground(Color.WHITE);
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        welcomeLabel.setForeground(PRIMARY_COLOR);
 
-        // Create search and filter panel
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setOpaque(false);
+        // Logout button
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.addActionListener(e -> handleLogout());
 
-        searchField = new JTextField(20);
-        searchField.setPreferredSize(new Dimension(200, 30));
-        searchField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.WHITE),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
+        header.add(welcomeLabel, BorderLayout.WEST);
+        header.add(logoutBtn, BorderLayout.EAST);
 
-        // Add search functionality
-        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { searchJobs(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { searchJobs(); }
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { searchJobs(); }
-        });
-
-        JButton logoutButton = new JButton("Logout");
-        logoutButton.setBackground(new Color(255, 87, 34));
-        logoutButton.setForeground(Color.WHITE);
-        logoutButton.setFocusPainted(false);
-        logoutButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        logoutButton.addActionListener(e -> logout());
-
-        searchPanel.add(searchField);
-        searchPanel.add(Box.createHorizontalStrut(20));
-        searchPanel.add(logoutButton);
-
-        headerPanel.add(welcomeLabel, BorderLayout.WEST);
-        headerPanel.add(searchPanel, BorderLayout.EAST);
-
-        return headerPanel;
+        return header;
     }
 
     private JPanel createMainPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        mainPanel.setBackground(BACKGROUND_COLOR);
+        mainPanel.setOpaque(false);
+        mainPanel.setBorder(new EmptyBorder(0, 20, 20, 20));
 
-        // Create the table
-        String[] columns = {"Job Title", "Description", "Status", "Posted Date", "Actions"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only allow editing of the Actions column
-            }
-        };
+        // Create and setup table
+        String[] columns = {"Job Title", "Company", "Location", "Status", "Posted Date", "Actions"};
+        tableModel = new DefaultTableModel(columns, 0);
+        jobTable = new JTable(tableModel);
 
-        jobTable = new JTable(tableModel) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component comp = super.prepareRenderer(renderer, row, column);
-                if (!isCellSelected(row, column)) {
-                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 252));
-                    if (column == 2) { // Status column
-                        String status = (String) getValueAt(row, column);
-                        comp.setForeground(getStatusColor(status));
-                    } else {
-                        comp.setForeground(Color.BLACK);
-                    }
-                }
-                return comp;
-            }
-        };
-
-        // Table styling
+        // Style table
         jobTable.setFont(mainFont);
         jobTable.setRowHeight(40);
         jobTable.setShowGrid(false);
-        jobTable.setShowHorizontalLines(true);
-        jobTable.setGridColor(new Color(230, 230, 230));
-        jobTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
-        jobTable.getTableHeader().setBackground(new Color(250, 250, 252));
-        jobTable.getTableHeader().setForeground(PRIMARY_COLOR);
+        jobTable.setSelectionBackground(new Color(245, 245, 250));
 
-        // Add button renderer/editor to the Actions column
-        jobTable.getColumnModel().getColumn(4).setCellRenderer(new ButtonRenderer());
-        jobTable.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new JCheckBox()));
+        // Style header
+        JTableHeader header = jobTable.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setBackground(Color.WHITE);
+        header.setForeground(PRIMARY_COLOR);
 
-        // Set column widths
-        jobTable.getColumnModel().getColumn(0).setPreferredWidth(200); // Title
-        jobTable.getColumnModel().getColumn(1).setPreferredWidth(300); // Description
-        jobTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Status
-        jobTable.getColumnModel().getColumn(3).setPreferredWidth(150); // Date
-        jobTable.getColumnModel().getColumn(4).setPreferredWidth(100); // Actions
-
+        // Add table to scroll pane
         JScrollPane scrollPane = new JScrollPane(jobTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
+
+        // Add apply button to last column
+        TableColumn actionColumn = jobTable.getColumnModel().getColumn(5);
+        actionColumn.setCellRenderer(new ButtonRenderer());
+        actionColumn.setCellEditor(new ButtonEditor(new JCheckBox()));
 
         mainPanel.add(scrollPane, BorderLayout.CENTER);
         return mainPanel;
@@ -151,17 +100,14 @@ public class UserDashboard extends JFrame {
 
     private void loadJobs() {
         currentJobs = jobDAO.getAllJobs();
-        updateTableWithJobs(currentJobs);
-    }
-
-    private void updateTableWithJobs(List<Job> jobs) {
         tableModel.setRowCount(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy");
 
-        for (Job job : jobs) {
+        for (Job job : currentJobs) {
             tableModel.addRow(new Object[]{
                     job.getTitle(),
-                    job.getDescription(),
+                    "Company Name", // Add company field to Job class
+                    "Location",     // Add location field to Job class
                     job.getStatus(),
                     dateFormat.format(job.getCreatedDate()),
                     "Apply"
@@ -169,104 +115,66 @@ public class UserDashboard extends JFrame {
         }
     }
 
-    private void searchJobs() {
-        String searchText = searchField.getText().toLowerCase();
-        List<Job> filteredJobs = currentJobs.stream()
-                .filter(job ->
-                        job.getTitle().toLowerCase().contains(searchText) ||
-                                job.getDescription().toLowerCase().contains(searchText))
-                .collect(java.util.stream.Collectors.toList());
-        updateTableWithJobs(filteredJobs);
-    }
-
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(
-                this,
+    private void handleLogout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to logout?",
                 "Confirm Logout",
-                JOptionPane.YES_NO_OPTION
-        );
+                JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            this.dispose();
+            dispose();
             new LoginFrame();
         }
     }
 
-    private Color getStatusColor(String status) {
-        if (status == null) return Color.BLACK;
-        switch (status.toLowerCase()) {
-            case "active": return new Color(46, 125, 50);  // Green
-            case "pending": return new Color(245, 124, 0); // Orange
-            case "closed": return new Color(211, 47, 47);  // Red
-            default: return Color.BLACK;
-        }
-    }
-
-    // Custom button renderer
+    // Custom button renderer for the Actions column
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
-            setBackground(new Color(63, 81, 181));
+            setBackground(APPLY_BUTTON_COLOR);  // Using green color
             setForeground(Color.WHITE);
-            setBorder(new EmptyBorder(5, 10, 5, 10));
         }
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
-            setText(value != null ? value.toString() : "");
+            setText("Apply");
             return this;
         }
     }
 
-    // Custom button editor
+    // Custom button editor for the Actions column
     class ButtonEditor extends DefaultCellEditor {
-        protected JButton button;
-        private String label;
-        private boolean isPushed;
+        private JButton button;
 
         public ButtonEditor(JCheckBox checkBox) {
             super(checkBox);
             button = new JButton();
             button.setOpaque(true);
-            button.setBackground(new Color(63, 81, 181));
+            button.setBackground(APPLY_BUTTON_COLOR);  // Using green color
             button.setForeground(Color.WHITE);
-            button.setBorder(new EmptyBorder(5, 10, 5, 10));
 
-            button.addActionListener(e -> fireEditingStopped());
+            button.addActionListener(e -> {
+                fireEditingStopped();
+                int row = jobTable.getSelectedRow();
+                String jobTitle = (String) jobTable.getValueAt(row, 0);
+                JOptionPane.showMessageDialog(UserDashboard.this,
+                        "Applied for: " + jobTitle,
+                        "Application Submitted",
+                        JOptionPane.INFORMATION_MESSAGE);
+            });
         }
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
                                                      boolean isSelected, int row, int column) {
-            label = (value == null) ? "" : value.toString();
-            button.setText(label);
-            isPushed = true;
+            button.setText("Apply");
             return button;
         }
 
         @Override
         public Object getCellEditorValue() {
-            if (isPushed) {
-                // Handle job application
-                int row = jobTable.getSelectedRow();
-                String jobTitle = (String) jobTable.getValueAt(row, 0);
-                JOptionPane.showMessageDialog(
-                        UserDashboard.this,
-                        "Application submitted for: " + jobTitle,
-                        "Application Submitted",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            }
-            isPushed = false;
-            return label;
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            isPushed = false;
-            return super.stopCellEditing();
+            return "Apply";
         }
     }
 }
