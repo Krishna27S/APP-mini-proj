@@ -251,11 +251,11 @@ public class MainFrame extends JFrame {
     }
 
     private JTable createEnhancedTable() {
-        String[] columns = {"ID", "Job Title", "Description", "Status", "Posted Date"};
+        String[] columns = {"ID", "Job Title", "Description", "Status", "Posted Date", "Actions"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 5; // Only allow editing of Actions column
             }
         };
 
@@ -289,14 +289,74 @@ public class MainFrame extends JFrame {
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(1).setPreferredWidth(250);
-        table.getColumnModel().getColumn(2).setPreferredWidth(350);
-        table.getColumnModel().getColumn(3).setPreferredWidth(120);
-        table.getColumnModel().getColumn(4).setPreferredWidth(150);
+        table.getColumnModel().getColumn(2).setPreferredWidth(300);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table.getColumnModel().getColumn(4).setPreferredWidth(120);
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);
+
+        // Add delete button renderer and editor
+        TableColumn actionColumn = table.getColumnModel().getColumn(5);
+        actionColumn.setCellRenderer(new DeleteButtonRenderer());
+        actionColumn.setCellEditor(new DeleteButtonEditor(new JCheckBox()));
 
         return table;
     }
 
-    private void addStatCard(JPanel panel, String title, String value, Color color) {
+    class DeleteButtonRenderer extends JButton implements TableCellRenderer {
+        public DeleteButtonRenderer() {
+            setOpaque(true);
+            setBackground(new Color(220, 53, 69)); // Red color
+            setForeground(Color.WHITE);
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setBorder(new EmptyBorder(5, 10, 5, 10));
+            setFocusPainted(false);
+            setBorderPainted(false);
+        }
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            setText("Delete");
+            return this;
+        }
+    }
+    class DeleteButtonEditor extends DefaultCellEditor {
+        private JButton button;
+
+        public DeleteButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            button = new JButton();
+            button.setOpaque(true);
+            button.setBackground(new Color(220, 53, 69));
+            button.setForeground(Color.WHITE);
+            button.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            button.setBorder(new EmptyBorder(5, 10, 5, 10));
+            button.setFocusPainted(false);
+            button.setBorderPainted(false);
+
+            button.addActionListener(e -> {
+                fireEditingStopped();
+                int row = templateTable.getSelectedRow();
+                if (row >= 0) {
+                    int jobId = (Integer) templateTable.getValueAt(row, 0);
+                    deleteSelectedJob();
+                }
+            });
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected, int row, int column) {
+            button.setText("Delete");
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return "Delete";
+        }
+    }
+
+        private void addStatCard(JPanel panel, String title, String value, Color color) {
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(color);
@@ -319,6 +379,53 @@ public class MainFrame extends JFrame {
         panel.add(card);
     }
 
+    private void refreshJobList() {
+        currentJobs = jobDAO.getAllJobs();
+        tableModel.setRowCount(0);
+
+        for (Job job : currentJobs) {
+            tableModel.addRow(new Object[]{
+                    job.getId(),
+                    job.getTitle(),
+                    job.getDescription(),
+                    job.getStatus(),
+                    new SimpleDateFormat("MMM dd, yyyy").format(job.getCreatedDate())
+            });
+        }
+    }
+
+    private void deleteSelectedJob() {
+        int selectedRow = templateTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            int jobId = (Integer) tableModel.getValueAt(selectedRow, 0);
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to delete this job?",
+                    "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (jobDAO.updateStatus(jobId, "Deleted")) { // Mark as deleted instead of removing
+                    refreshJobList();
+                    JOptionPane.showMessageDialog(this,
+                            "Job deleted successfully!",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Error deleting job",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a job to delete",
+                    "Selection Required",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
     // Continue with Part 2...
 
     // Helper methods for UI components
@@ -402,20 +509,7 @@ public class MainFrame extends JFrame {
         }
     }
     
-    private void refreshJobList() {
-        currentJobs = jobDAO.getAllJobs();
-        tableModel.setRowCount(0);
-        
-        for (Job job : currentJobs) {
-            tableModel.addRow(new Object[]{
-                job.getId(),
-                job.getTitle(),
-                job.getDescription(),
-                job.getStatus(),
-                new SimpleDateFormat("MMM dd, yyyy").format(job.getCreatedDate())
-            });
-        }
-    }
+
     
     private void updateJobStatus(String newStatus) {
         int selectedRow = templateTable.getSelectedRow();
@@ -432,29 +526,7 @@ public class MainFrame extends JFrame {
         }
     }
     
-    private void deleteSelectedJob() {
-        int selectedRow = templateTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            int jobId = (Integer) tableModel.getValueAt(selectedRow, 0);
-            
-            int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this job?",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-                
-            if (confirm == JOptionPane.YES_OPTION) {
-                if (jobDAO.deleteJob(jobId)) {
-                    refreshJobList();
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Please select a job to delete",
-                "Selection Required",
-                JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
+
     
     private void addCountLabel(JPanel panel, String text, int count) {
         JLabel label = new JLabel(text + count);
