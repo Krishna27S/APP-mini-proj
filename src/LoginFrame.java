@@ -7,6 +7,7 @@ public class LoginFrame extends JFrame {
 
     private JTextField tfUsername;
     private JPasswordField pfPassword;
+    private JComboBox<String> userTypeCombo;
 
     public LoginFrame() {
         try {
@@ -19,7 +20,7 @@ public class LoginFrame extends JFrame {
 
     private void initialize() {
         setTitle("internXconnect - Login");
-        setSize(450, 550);
+        setSize(450, 600);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -31,27 +32,22 @@ public class LoginFrame extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
 
         // Logo and Title
-        // Logo and Title
         try {
             ImageIcon gifIcon = new ImageIcon(getClass().getResource("/icon.png"));
-            // Reduced size to 60x60 pixels (you can adjust these numbers)
             Image scaledImage = gifIcon.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT);
             ImageIcon scaledGifIcon = new ImageIcon(scaledImage);
-
-            // Use the scaled version instead of original
-            JLabel logoLabel = new JLabel(scaledGifIcon);  // Using scaled version here
-
+            JLabel logoLabel = new JLabel(scaledGifIcon);
             logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             mainPanel.add(logoLabel);
         } catch (Exception e) {
-            System.out.println("GIF not found");
-            // Fallback to text or emoji if GIF is not found
+            System.out.println("Icon not found");
             JLabel fallbackLabel = new JLabel("👥");
             fallbackLabel.setFont(new Font("Segoe UI", Font.PLAIN, 48));
             fallbackLabel.setForeground(PRIMARY_COLOR);
             fallbackLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             mainPanel.add(fallbackLabel);
         }
+
         JLabel titleLabel = new JLabel("internXconnect");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(PRIMARY_COLOR);
@@ -98,7 +94,19 @@ public class LoginFrame extends JFrame {
         gbc.insets = new Insets(5, 0, 5, 0);
         formPanel.add(pfPassword, gbc);
 
-        formPanel.setMaximumSize(new Dimension(300, 200));
+        // User Type Combo Box
+        JLabel typeLabel = new JLabel("Login As");
+        typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        gbc.gridy = 4;
+        gbc.insets = new Insets(15, 0, 5, 0);
+        formPanel.add(typeLabel, gbc);
+
+        userTypeCombo = createComboBox();
+        gbc.gridy = 5;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        formPanel.add(userTypeCombo, gbc);
+
+        formPanel.setMaximumSize(new Dimension(300, 300));
         mainPanel.add(formPanel);
         mainPanel.add(Box.createVerticalStrut(20));
 
@@ -144,6 +152,16 @@ public class LoginFrame extends JFrame {
         return field;
     }
 
+    private JComboBox<String> createComboBox() {
+        String[] userTypes = {"User", "Admin"};
+        JComboBox<String> comboBox = new JComboBox<>(userTypes);
+        comboBox.setPreferredSize(new Dimension(300, 35));
+        comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        comboBox.setBackground(Color.WHITE);
+        ((JComponent) comboBox.getRenderer()).setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        return comboBox;
+    }
+
     private JButton createLoginButton(String text) {
         JButton button = new JButton(text);
         button.setPreferredSize(new Dimension(300, 40));
@@ -159,18 +177,44 @@ public class LoginFrame extends JFrame {
     private void handleLogin() {
         String username = tfUsername.getText();
         String password = new String(pfPassword.getPassword());
+        String userType = (String) userTypeCombo.getSelectedItem();
 
-        if (username.equals("admin") && password.equals("admin")) {
-            dispose();
-            SwingUtilities.invokeLater(() -> {
-                MainFrame mainFrame = new MainFrame();
-                mainFrame.initialize();
-            });
-        } else {
-            JOptionPane.showMessageDialog(this,
-                    "Invalid credentials.\nUse: username = admin, password = admin",
-                    "Login Failed",
-                    JOptionPane.ERROR_MESSAGE);
+        if (username.isEmpty() || password.isEmpty()) {
+            showError("Please enter both username and password");
+            return;
         }
+
+        // Admin login
+        if (userType.equals("Admin")) {
+            if (username.equals("admin") && password.equals("admin")) {
+                dispose();
+                SwingUtilities.invokeLater(() -> {
+                    MainFrame mainFrame = new MainFrame();
+                    mainFrame.initialize();
+                });
+            } else {
+                showError("Invalid admin credentials");
+            }
+        }
+        // User login
+        else {
+            if (username.equals("user") && password.equals("user")) {
+                dispose();
+                SwingUtilities.invokeLater(() -> {
+                    new UserDashboard(username);
+                });
+            } else {
+                showError("Invalid user credentials");
+            }
+        }
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                "Login Failed",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 }
