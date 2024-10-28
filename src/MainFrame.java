@@ -5,6 +5,8 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
 public class MainFrame extends JFrame {
     final private Font mainFont = new Font("Segoe UI", Font.BOLD, 18);
@@ -20,7 +22,7 @@ public class MainFrame extends JFrame {
     // Database components
     private JobDAO jobDAO;
     private List<Job> currentJobs;
-    
+
     // Custom colors
     private final Color PRIMARY_COLOR = new Color(123, 31, 162); // Deep Purple
     private final Color BUTTON_COLOR = new Color(255, 87, 34);   // Deep Orange
@@ -181,154 +183,140 @@ public class MainFrame extends JFrame {
 
     private JPanel createTemplatePanel() {
         JPanel templatePanel = new JPanel(new BorderLayout(10, 10));
-        templatePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        templatePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         templatePanel.setBackground(BACKGROUND_COLOR);
-        
-        // Header Panel with Stats
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        
-        JLabel headerLabel = new JLabel("Job Listings");
-        headerLabel.setFont(titleFont);
-        headerLabel.setForeground(PRIMARY_COLOR);
-        
-        // Stats Panel
-        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
-        statsPanel.setOpaque(false);
-        addCountLabel(statsPanel, "Total Jobs: ", currentJobs.size());
-        
-        headerPanel.add(headerLabel, BorderLayout.NORTH);
-        headerPanel.add(statsPanel, BorderLayout.CENTER);
-        headerPanel.add(new JSeparator(), BorderLayout.SOUTH);
 
-        // Enhanced Table
-        String[] columnNames = {"ID", "Job Title", "Description", "Status", "Posted Date"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
+        // Enhanced Header with Search
+        JPanel headerPanel = createEnhancedHeader();
+
+        // Enhanced Table Panel
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBorder(new CompoundBorder(
+                new EmptyBorder(15, 0, 15, 0),
+                new LineBorder(new Color(230, 230, 230), 1, true)
+        ));
+
+        // Create Enhanced Table
+        templateTable = createEnhancedTable();
+        JScrollPane scrollPane = new JScrollPane(templateTable);
+        scrollPane.setBorder(null);
+        tablePanel.add(scrollPane);
+
+        // Create Card-style Form Panel
+        JPanel formPanel = createCardStyleForm();
+
+        // Main Layout Assembly
+        templatePanel.add(headerPanel, BorderLayout.NORTH);
+        templatePanel.add(tablePanel, BorderLayout.CENTER);
+        templatePanel.add(formPanel, BorderLayout.SOUTH);
+
+        return templatePanel;
+    }
+
+    private JPanel createEnhancedHeader() {
+        JPanel header = new JPanel(new BorderLayout(15, 10));
+        header.setOpaque(false);
+
+        // Title and Stats
+        JPanel titleStatsPanel = new JPanel(new BorderLayout());
+        titleStatsPanel.setOpaque(false);
+
+        JLabel headerLabel = new JLabel("Job Listings Dashboard");
+        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerLabel.setForeground(PRIMARY_COLOR);
+
+        // Stats in cards
+        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        statsPanel.setOpaque(false);
+
+        addStatCard(statsPanel, "Total Jobs", String.valueOf(currentJobs.size()), new Color(63, 81, 181));
+        addStatCard(statsPanel, "Active", getStatusCount("active"), new Color(76, 175, 80));
+        addStatCard(statsPanel, "Pending", getStatusCount("pending"), new Color(255, 152, 0));
+
+        titleStatsPanel.add(headerLabel, BorderLayout.NORTH);
+        titleStatsPanel.add(statsPanel, BorderLayout.CENTER);
+
+        // Search Panel
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        searchPanel.setOpaque(false);
+        JTextField searchField = createSearchField();
+        searchPanel.add(searchField);
+
+        header.add(titleStatsPanel, BorderLayout.CENTER);
+        header.add(searchPanel, BorderLayout.EAST);
+        header.add(new JSeparator(), BorderLayout.SOUTH);
+
+        return header;
+    }
+
+    private JTable createEnhancedTable() {
+        String[] columns = {"ID", "Job Title", "Description", "Status", "Posted Date"};
+        tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        
-        templateTable = new JTable(tableModel) {
+
+        JTable table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component comp = super.prepareRenderer(renderer, row, column);
                 if (!isCellSelected(row, column)) {
-                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
-                    
-                    // Color code the status column
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 252));
                     if (column == 3) {
                         String status = (String) getValueAt(row, column);
                         comp.setForeground(getStatusColor(status));
-                    } else {
-                        comp.setForeground(TEXT_COLOR);
+                        ((JLabel)comp).setHorizontalAlignment(SwingConstants.CENTER);
                     }
                 }
                 return comp;
             }
         };
 
-        // Table Styling
-        templateTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        templateTable.setRowHeight(40);
-        templateTable.setShowGrid(false);
-        templateTable.setShowHorizontalLines(true);
-        templateTable.setGridColor(new Color(230, 230, 230));
-        templateTable.setSelectionBackground(new Color(232, 240, 254));
-        
-        // Hide ID column
-        templateTable.getColumnModel().getColumn(0).setMinWidth(0);
-        templateTable.getColumnModel().getColumn(0).setMaxWidth(0);
-        templateTable.getColumnModel().getColumn(0).setWidth(0);
+        // Apply modern styling
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setRowHeight(45);
+        table.setShowGrid(false);
+        table.setShowHorizontalLines(true);
+        table.setGridColor(new Color(240, 240, 240));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(250, 250, 252));
+        table.getTableHeader().setForeground(PRIMARY_COLOR);
 
-        // Set other column widths
-        templateTable.getColumnModel().getColumn(1).setPreferredWidth(200); // Title
-        templateTable.getColumnModel().getColumn(2).setPreferredWidth(300); // Description
-        templateTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Status
-        templateTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Date
+        // Column customization
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(1).setPreferredWidth(250);
+        table.getColumnModel().getColumn(2).setPreferredWidth(350);
+        table.getColumnModel().getColumn(3).setPreferredWidth(120);
+        table.getColumnModel().getColumn(4).setPreferredWidth(150);
 
-        // Add right-click menu
-        JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem deleteItem = new JMenuItem("Delete");
-        JMenu statusMenu = new JMenu("Change Status");
-        
-        String[] statuses = {"Active", "Pending", "Closed"};
-        for (String status : statuses) {
-            JMenuItem statusItem = new JMenuItem(status);
-            statusItem.addActionListener(e -> updateJobStatus(status));
-            statusMenu.add(statusItem);
-        }
-        
-        deleteItem.addActionListener(e -> deleteSelectedJob());
-        popupMenu.add(statusMenu);
-        popupMenu.add(deleteItem);
-        
-        templateTable.setComponentPopupMenu(popupMenu);
+        return table;
+    }
 
-        // Scroll Pane
-        JScrollPane scrollPane = new JScrollPane(templateTable);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        
-        // Form Panel
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        
-        // Form fields
-        gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(createStyledLabel("Job Title:"), gbc);
-        
-        tfTemplateName = createStyledTextField();
-        gbc.gridx = 1; gbc.gridy = 0;
-        formPanel.add(tfTemplateName, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        formPanel.add(createStyledLabel("Description:"), gbc);
-        
-        tfTemplateDescription = createStyledTextField();
-        gbc.gridx = 1; gbc.gridy = 1;
-        formPanel.add(tfTemplateDescription, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(createStyledLabel("Details:"), gbc);
-        
-        taTemplateContent = createStyledTextArea();
-        JScrollPane contentScroll = new JScrollPane(taTemplateContent);
-        contentScroll.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        gbc.gridx = 1; gbc.gridy = 2;
-        formPanel.add(contentScroll, gbc);
-        
-        // Button Panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonPanel.setOpaque(false);
-        
-        JButton refreshButton = createStyledButton("Refresh");
-        refreshButton.addActionListener(e -> refreshJobList());
-        
-        JButton addButton = createStyledButton("Add Job");
-        addButton.addActionListener(e -> addTemplate());
-        
-        buttonPanel.add(refreshButton);
-        buttonPanel.add(addButton);
-        
-        gbc.gridx = 1; gbc.gridy = 3;
-        formPanel.add(buttonPanel, gbc);
-        
-        // Add all components
-        templatePanel.add(headerPanel, BorderLayout.NORTH);
-        templatePanel.add(scrollPane, BorderLayout.CENTER);
-        templatePanel.add(formPanel, BorderLayout.SOUTH);
-        
-        return templatePanel;
+    private void addStatCard(JPanel panel, String title, String value, Color color) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(color);
+        card.setBorder(new EmptyBorder(10, 15, 10, 15));
+        card.setPreferredSize(new Dimension(120, 70));
+
+        JLabel valueLabel = new JLabel(value);
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        valueLabel.setForeground(Color.WHITE);
+        valueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        titleLabel.setForeground(new Color(255, 255, 255, 220));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        card.add(valueLabel);
+        card.add(Box.createVerticalStrut(5));
+        card.add(titleLabel);
+        panel.add(card);
     }
 
     // Continue with Part 2...
@@ -483,6 +471,119 @@ public class MainFrame extends JFrame {
             case "closed": return new Color(211, 47, 47);  // Red
             default: return TEXT_COLOR;
         }
+    }
+    private JPanel createCardStyleForm() {
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Job Title
+        gbc.gridx = 0; gbc.gridy = 0;
+        JLabel titleLabel = createStyledLabel("Job Title");
+        formPanel.add(titleLabel, gbc);
+
+        tfTemplateName = createStyledTextField();
+        tfTemplateName.setPreferredSize(new Dimension(300, 35));
+        gbc.gridx = 1; gbc.gridy = 0;
+        formPanel.add(tfTemplateName, gbc);
+
+        // Description
+        gbc.gridx = 0; gbc.gridy = 1;
+        JLabel descLabel = createStyledLabel("Description");
+        formPanel.add(descLabel, gbc);
+
+        tfTemplateDescription = createStyledTextField();
+        tfTemplateDescription.setPreferredSize(new Dimension(300, 35));
+        gbc.gridx = 1; gbc.gridy = 1;
+        formPanel.add(tfTemplateDescription, gbc);
+
+        // Details
+        gbc.gridx = 0; gbc.gridy = 2;
+        JLabel detailsLabel = createStyledLabel("Details");
+        formPanel.add(detailsLabel, gbc);
+
+        taTemplateContent = createStyledTextArea();
+        JScrollPane contentScroll = new JScrollPane(taTemplateContent);
+        contentScroll.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+        contentScroll.setPreferredSize(new Dimension(300, 100));
+        gbc.gridx = 1; gbc.gridy = 2;
+        formPanel.add(contentScroll, gbc);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+
+        JButton refreshButton = createStyledButton("Refresh");
+        refreshButton.setPreferredSize(new Dimension(100, 35));
+        refreshButton.addActionListener(e -> refreshJobList());
+
+        JButton addButton = createStyledButton("Add Job");
+        addButton.setPreferredSize(new Dimension(100, 35));
+        addButton.addActionListener(e -> addTemplate());
+
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(addButton);
+
+        gbc.gridx = 1; gbc.gridy = 3;
+        gbc.anchor = GridBagConstraints.EAST;
+        formPanel.add(buttonPanel, gbc);
+
+        // Wrap in a container with padding
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(BACKGROUND_COLOR);
+        container.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        container.add(formPanel, BorderLayout.CENTER);
+
+        return container;
+    }
+
+    // Helper method for creating search field
+    private JTextField createSearchField() {
+        JTextField searchField = new JTextField(20);
+        searchField.setPreferredSize(new Dimension(200, 30));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        // Add placeholder text
+        searchField.setText("Search jobs...");
+        searchField.setForeground(Color.GRAY);
+
+        searchField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (searchField.getText().equals("Search jobs...")) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setText("Search jobs...");
+                    searchField.setForeground(Color.GRAY);
+                }
+            }
+        });
+
+        return searchField;
+    }
+
+    // Helper method to get status count
+    private String getStatusCount(String status) {
+        return String.valueOf(currentJobs.stream()
+                .filter(job -> job.getStatus().toLowerCase().equals(status))
+                .count());
     }
     
     public static void main(String[] args) {
