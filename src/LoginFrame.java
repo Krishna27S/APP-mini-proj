@@ -1,5 +1,5 @@
-import java.awt.*;
-import javax.swing.*;
+import java.awt.*;//Imports all classes in the Abstract Window Toolkit (AWT) for creating user interface components and graphics in Java.
+import javax.swing.*;//Imports all classes in the Swing library for building graphical user interfaces in Java.
 
 public class LoginFrame extends JFrame {
     private final Color PRIMARY_COLOR = new Color(123, 31, 162);

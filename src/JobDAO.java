@@ -1,10 +1,10 @@
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;//Imports the Connection interface, which represents a connection to a database.
+import java.sql.PreparedStatement;//Imports the PreparedStatement interface, which is used for executing precompiled SQL statements with or without input parameters.
+import java.sql.ResultSet;//Imports the ResultSet interface, which provides methods for retrieving data returned by a database query.
+import java.sql.SQLException;//Imports the SQLException class, which handles database access errors and other errors related to SQL operations.
+import java.sql.Statement;//Imports the Statement interface, which is used for executing SQL queries against the database.
+import java.util.ArrayList;//Imports the ArrayList class, which provides a resizable array implementation of the List interface.
+import java.util.List;//Imports the List interface, which defines a collection of ordered elements that can contain duplicates.
 
 import javax.swing.JOptionPane;
 // Add this as first line in all .java files

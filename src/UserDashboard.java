@@ -1,10 +1,12 @@
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.text.SimpleDateFormat;
-import java.util.List;
+import javax.swing.*;//Imports all classes in the Swing library for building graphical user interfaces in Java.
+import javax.swing.border.*;// Imports classes for creating and managing borders around Swing components.
+
+
+import javax.swing.table.*;//Imports classes for creating and managing tables in Swing.
+import java.awt.*;//Imports all classes in the Abstract Window Toolkit (AWT) for building user interfaces and graphical components.
+import java.awt.event.*;//Imports classes for handling various types of events in AWT and Swing components.
+import java.text.SimpleDateFormat;//Imports the SimpleDateFormat class for formatting and parsing dates in a locale-sensitive manner.
+import java.util.List;//Imports the List interface for defining a collection of ordered elements that can contain duplicates.
 
 public class UserDashboard extends JFrame {
     private final Font mainFont = new Font("Segoe UI", Font.PLAIN, 14);

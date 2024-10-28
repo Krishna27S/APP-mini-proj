@@ -1,7 +1,7 @@
 
 
-import java.sql.*;
-import javax.swing.JOptionPane;
+import java.sql.*;//Imports all classes and interfaces for database access and manipulation in Java.
+import javax.swing.JOptionPane;//Imports the JOptionPane class for creating standard dialog boxes in a graphical user interface.
 
 public class DatabaseConnection {
     static {

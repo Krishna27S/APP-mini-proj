@@ -1,12 +1,12 @@
-import java.awt.*;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.*;//Imports the Abstract Window Toolkit (AWT) package, which contains classes for creating user interfaces and graphical components in Java.
+import java.text.SimpleDateFormat;//Imports the SimpleDateFormat class, used for formatting and parsing dates in a locale-sensitive manner.
+import java.util.ArrayList;//Imports the ArrayList class, which provides a resizable array implementation of the List interface.
+import java.util.List;//Imports the List interface, which defines a collection of ordered elements that can contain duplicates.
+import javax.swing.*;//Imports the Swing library, which contains classes for building graphical user interfaces (GUIs) in Java.
+import javax.swing.border.*;//Imports classes related to borders in Swing components, allowing customization of component appearances.
+import javax.swing.table.*;//Imports classes for working with tables in Swing, enabling the creation and manipulation of tabular data.
+import java.awt.event.FocusAdapter;//Imports the FocusAdapter class, which provides default implementations for focus event listeners, making it easier to handle focus changes.
+import java.awt.event.FocusEvent;//Imports the FocusEvent class, which represents an event that indicates a component has gained or lost focus.
 
 public class MainFrame extends JFrame {
     final private Font mainFont = new Font("Segoe UI", Font.BOLD, 18);
